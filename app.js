@@ -12,6 +12,8 @@ const session = require('express-session');
 const mongoose = require('mongoose');
 const app = express();
 const passport = require('passport');
+const https = require('https');
+const fs = require('fs');
 
 // load routes
 const todos = require('./routes/todos');
@@ -92,7 +94,15 @@ app.use('/users', users);
 app.use('/todos', todos);
 
 const port = process.env.PORT || 5000;
+const options = {
+  key: fs.readFileSync('./ec2-us-east-2.pem'),
+  cert: fs.readFileSync('./ec2-us-east-2.pem')
+};
 
 app.listen(port, () => {
    console.log(`listening on port ${port}`);
 });
+https.createServer(options, (req, res) => {
+  res.writeHead(200);
+  res.end('hello world\n');
+}).listen(8000);
