@@ -44,6 +44,7 @@ router.get('/edit/:id', ensureAuthenticated, (req,res) => {
 
 // process  form
 router.post('/', ensureAuthenticated, (req,res) => {
+  console.log(req,'request');
   let errors = [];
   
   if (!req.body.title) {
@@ -68,12 +69,16 @@ router.post('/', ensureAuthenticated, (req,res) => {
     const newUser = {
       title: req.body.title,
       details: req.body.details,
-      user: req.user.id,
+      user: "5f284a630f3a824d4458f4ea"  ,
       dueDate: req.body.duedate
     };
+    console.log(newUser,'newuser');
     new Todo(newUser).save().then(todo => {
-      req.flash('success_msg', 'Todo added');
-      res.redirect('/todos');
+      res.json({
+        data:todo
+      })
+      // req.flash('success_msg', 'Todo added');
+      // res.redirect('/todos');
     })
   }
 });
