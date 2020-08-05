@@ -1,7 +1,6 @@
 // server start: nodemon app.js
 // mongodb start (form workspace folder): ../mongostart
 
-
 const express = require('express');
 const path = require('path');
 const exphbs = require('express-handlebars');
@@ -12,8 +11,6 @@ const session = require('express-session');
 const mongoose = require('mongoose');
 const app = express();
 const passport = require('passport');
-const https = require('https');
-const fs = require('fs');
 
 // load routes
 const todos = require('./routes/todos');
@@ -22,23 +19,54 @@ const users = require('./routes/users');
 // passport config
 require('./config/passport')(passport);
 
+
 // db config
 const db = require('./config/database');
 
 // connect to mongoose
-mongoose.connect(db.mongoURI).then(() => {
-    console.log('MongoDB connected...');
-}).catch(err => {
-    console.log(err);
-});
+mongoose
+    .connect(db.mongoURI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    })
+    .then(() => {
+        console.log('MongoDB connected...');
+    })
+    .catch((err) => {
+        console.log(err);
+    });
 
 // handlebars middleware
-app.engine('handlebars', exphbs({
-    defaultLayout: 'main'
-
-}));
+app.engine(
+    'handlebars',
+    exphbs({
+        defaultLayout: 'main'
+    })
+);
 app.set('view engine', 'handlebars');
+app.use(function (req, res, next) {
+    // Website you wish to allow to connect
+    res.setHeader('Access-Control-Allow-Origin', '*');
 
+    // Request methods you wish to allow
+    res.setHeader(
+        'Access-Control-Allow-Methods',
+        'GET, POST, OPTIONS, PUT, PATCH, DELETE'
+    );
+
+    // Request headers you wish to allow
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-Requested-With,content-type'
+    );
+
+    // Set to true if you need the website to include cookies in the requests sent
+    // to the API (e.g. in case you use sessions)
+    res.setHeader('Access-Control-Allow-Credentials', true);
+
+    // Pass to next layer of middleware
+    next();
+});
 // body parser middleware
 // - parse application/x-www-form-urlencoded
 // - parse application/json
@@ -52,12 +80,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 
 // express session
-app.use(session({
-  secret: 'secret',
-  resave: true,
-  saveUninitialized: true
-
-}));
+app.use(
+    session({
+        secret: 'secret',
+        resave: true,
+        saveUninitialized: true
+    })
+);
 
 // add passport middleware
 // it is very important to add this after the express session
@@ -67,42 +96,32 @@ app.use(passport.session());
 // flash
 app.use(flash());
 
-
 // Global variables
-app.use(function(req, res, next) {
-  res.locals.success_msg = req.flash('success_msg'); // needed for flash to work
-  res.locals.error_msg = req.flash('error_msg');     // needed for flash to work
-  res.locals.error = req.flash('error');             // needed for flash to work
-  res.locals.user = req.user || null;                // needed for passport login/logout to work
-  next();
-})
+app.use(function (req, res, next) {
+    res.locals.success_msg = req.flash('success_msg'); // needed for flash to work
+    res.locals.error_msg = req.flash('error_msg'); // needed for flash to work
+    res.locals.error = req.flash('error'); // needed for flash to work
+    res.locals.user = req.user || null; // needed for passport login/logout to work
+    next();
+});
 
 app.get('/', (req, res) => {
-    const title='Welcome to ToDoNow!';
+    const title = 'Welcome to ToDoNow!';
     res.render('index', {
-       title: title
-   });
+        title: title
+    });
 });
 
-app.get('/about', (req,res) => {
-   res.render('about');
+app.get('/about', (req, res) => {
+    res.render('about');
 });
-
 
 // use routes
 app.use('/users', users);
 app.use('/todos', todos);
 
 const port = process.env.PORT || 5000;
-const options = {
-  key: fs.readFileSync('./ec2-us-east-2.pem'),
-  cert: fs.readFileSync('./ec2-us-east-2.pem')
-};
 
 app.listen(port, () => {
-   console.log(`listening on port ${port}`);
+    console.log(`listening on port ${port}`);
 });
-https.createServer(options, (req, res) => {
-  res.writeHead(200);
-  res.end('hello world\n');
-}).listen(8000);
